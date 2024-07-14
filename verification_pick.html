@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Teachable Machine Image ML</title>
+</head>
+<body>
+    <div>Teachable Machine Image Model</div>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button type="button" onclick="init()">Start</button>
+    <div id="image-container"></div>
+    <div id="label-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+
+        const URL = "./my_model/";
+    
+        let model, labelContainer, maxPredictions;
+    
+        // Load the image model
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+    
+            // load the model and metadata
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+    
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+
+            // Add event listener to the file input
+            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+        }
+    
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = async function() {
+                    const imageContainer = document.getElementById("image-container");
+                    imageContainer.innerHTML = ''; // Clear previous image
+                    imageContainer.appendChild(img);
+                    await predict(img);
+                }
+                img.src = e.target.result;
+            }
+            
+            reader.readAsDataURL(file);
+        }
+    
+        // run the uploaded image through the image model
+        async function predict(imgElement) {
+            // predict can take in an image, video or canvas html element
+            const prediction = await model.predict(imgElement);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        }
+    </script>
+</body>
+</html>
